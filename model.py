@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import resnet18
+
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -61,3 +61,92 @@ class ResNet(nn.Module):
 
 def ResNet18():
     return ResNet(BasicBlock, [2,2,2,2])
+
+
+class PatchEmbedding(nn.Module):
+    def __init__(self, in_channels=1, img_size=28, patch_size=4, embed_dim=128):
+        super().__init__()
+        self.patch_size = patch_size
+        self.proj = nn.Conv2d(in_channels, embed_dim, kernel_size=patch_size, stride=patch_size)
+        num_patches = (img_size // patch_size) * (img_size // patch_size)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_emb = nn.Parameter(torch.zeros(1, num_patches + 1, embed_dim))
+
+    def forward(self, x):
+        B = x.shape[0]
+        x = self.proj(x)
+        x = x.flatten(2)
+        x = x.transpose(1, 2)
+
+        cls_token = self.cls_token.expand(B, -1, -1)
+        x = torch.cat((cls_token, x), dim=1)
+
+        x = x + self.pos_emb[:, : x.size(1), :]
+        return x
+
+
+class TransformerEncoderBlock(nn.Module):
+    def __init__(self, embed_dim, num_heads, mlp_hidden_dim, drop_prob=0.1):
+        super().__init__()
+        self.ln1 = nn.LayerNorm(embed_dim)
+        self.attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=drop_prob, batch_first=True)
+        self.ln2 = nn.LayerNorm(embed_dim)
+
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim, mlp_hidden_dim),
+            nn.GELU(),
+            nn.Dropout(drop_prob),
+            nn.Linear(mlp_hidden_dim, embed_dim),
+            nn.Dropout(drop_prob)
+        )
+
+    def forward(self, x):
+        x_norm = self.ln1(x)
+        attn_out, _ = self.attn(x_norm, x_norm, x_norm)
+        x = x + attn_out
+        x_norm = self.ln2(x)
+        mlp_out = self.mlp(x_norm)
+        x = x + mlp_out
+        return x
+
+
+class VisionTransformer(nn.Module):
+    def __init__(self,
+                 img_size=28,
+                 patch_size=4,
+                 in_channels=1,
+                 embed_dim=512,
+                 num_heads=32,
+                 num_layers=12,
+                 mlp_hidden_dim=512,
+                 num_classes=10,
+                 drop_prob=0.1):
+        super().__init__()
+
+        self.patch_embed = PatchEmbedding(
+            in_channels=in_channels,
+            img_size=img_size,
+            patch_size=patch_size,
+            embed_dim=embed_dim
+        )
+
+        self.blocks = nn.Sequential(*[
+            TransformerEncoderBlock(embed_dim, num_heads, mlp_hidden_dim, drop_prob)
+            for _ in range(num_layers)
+        ])
+
+        self.ln = nn.LayerNorm(embed_dim)
+        self.fc = nn.Linear(embed_dim, num_classes)
+
+    def forward(self, x):
+        x = self.patch_embed(x)
+        x = self.blocks(x)
+        x = self.ln(x)
+        cls_token = x[:, 0]
+        out = self.fc(cls_token)
+        return out
+
+def ViT():
+    model = VisionTransformer()
+
+    return model

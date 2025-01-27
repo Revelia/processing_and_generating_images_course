@@ -2,10 +2,13 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch.nn.functional as F
+
+from constant import MEAN, STD
 from dataloader import LabeledImageDataset
 from torchvision import transforms
 import matplotlib.pyplot as plt
-from utils import calculate_mean_std, ssim, PerceptualLoss, IMG_SIZE, MSE_FACTOR
+from utils import PerceptualLoss
+from constant import IMG_SIZE, MSE_FACTOR
 
 
 def calculate_combined_loss(original, reconstructed, perceptual_loss_fn, mean, std):
@@ -19,7 +22,7 @@ def calculate_combined_loss(original, reconstructed, perceptual_loss_fn, mean, s
     return combined_loss
 
 if __name__ == "__main__":
-    mean, std = calculate_mean_std('dataset/train', image_size=(64, 32))
+    mean, std = MEAN, STD
 
     transform = transforms.Compose([
         transforms.Resize(IMG_SIZE),

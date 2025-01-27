@@ -1,4 +1,3 @@
-import os
 import torch
 import numpy as np
 from sklearn.metrics import f1_score
@@ -6,12 +5,11 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 from dataloader import ImageFolderDataset
-from autoencoder import AutoEncoderWithSkipConnections
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
-from utils import ssim, denormalize, PerceptualLoss, MSE_FACTOR
-from utils import IMG_SIZE
+from utils import PerceptualLoss
+from constant import IMG_SIZE, MSE_FACTOR
 
 
 
@@ -24,13 +22,9 @@ def compute_combined_loss_for_dataset(autoencoder, dataloader, device, perceptua
             images = images.to(device)
             reconstructed = autoencoder(images)
 
-            # MSE Loss
             mse_loss = F.mse_loss(reconstructed, images).item()
-
-            # Perceptual Loss
             perceptual_loss = perceptual_loss_fn(images, reconstructed).item()
 
-            # Combined Loss
             combined_loss = MSE_FACTOR * mse_loss + (1-MSE_FACTOR) * perceptual_loss
             all_losses.append(combined_loss)
 
@@ -87,7 +81,6 @@ def plot_metrics(metrics, save_path="metrics_plot.png"):
     print(f"График сохранён в {save_path}")
 
 
-# Основной скрипт
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -122,7 +115,7 @@ if __name__ == "__main__":
     threshold_range = np.linspace(1, 10, 1000)
     optimal_threshold, best_f1, metrics = find_optimal_threshold(loss_values, labels, threshold_range)
 
-    print(f"Оптимальный порог: {optimal_threshold:.4f}, F1-скоринг: {best_f1:.4f}")
+    print(f"Оптимальный порог: {optimal_threshold:.4f}, F1: {best_f1:.4f}")
     for metric in metrics:
         print(f"Порог: {metric['threshold']:.4f}, F1: {metric['f1']:.4f}, TPR: {metric['tpr']:.4f}, TNR: {metric['tnr']:.4f}")
 

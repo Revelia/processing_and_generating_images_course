@@ -6,6 +6,10 @@ experiments = ['UNET_MSE_FACTOR_00', 'UNET_MSE_FACTOR_010', 'UNET_MSE_FACTOR_03'
 tpr_values = [0.9612, 0.9457, 0.9922, 0.9457, 0.9380, ]
 tnr_values = [0.8488, 0.8628, 0.8322, 0.8379, 0.8161, ]
 
+experiments += ['UNET_MSE_FACTOR_00_VGG', 'UNET_MSE_FACTOR_03_VGG', 'UNET_MSE_FACTOR_06_VGG']
+tpr_values += [0.9767, 0.9612, 0.9535]
+tnr_values += [0.7850, 0.8357, 0.8284]
+
 # Устанавливаем ширину столбцов
 bar_width = 0.35
 
@@ -27,7 +31,7 @@ ax.set_xticks(index + bar_width / 2)
 ax.set_xticklabels(experiments, rotation=45, ha='right')
 ax.legend()
 
-ax.set_ylim(0.7, 1)
+ax.set_ylim(0.8, 1)
 
 # Показать график
 plt.tight_layout()

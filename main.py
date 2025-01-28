@@ -67,9 +67,9 @@ def run_experiment(experiment_name: str,
 
 if __name__ == "__main__":
     experiments = [
-        {"experiment_name": "UNET_MSE_FACTOR_00_VGG", "mse_factor": 0.0},
-        {"experiment_name": "UNET_MSE_FACTOR_03_VGG", "mse_factor": 0.3},
-        # {"experiment_name": "UNET_MSE_FACTOR_06", "mse_factor": 0.6},
+        # {"experiment_name": "UNET_MSE_FACTOR_00_VGG", "mse_factor": 0.0},
+        # {"experiment_name": "UNET_MSE_FACTOR_03_VGG", "mse_factor": 0.3},
+        {"experiment_name": "UNET_MSE_FACTOR_06_VGG_NOISE_STRONGER", "mse_factor": 0.3},
         # {"experiment_name": "UNET_MSE_FACTOR_08", "mse_factor": 0.8},
         # {"experiment_name": "UNET_MSE_FACTOR_10", "mse_factor": 0.10},
     ]

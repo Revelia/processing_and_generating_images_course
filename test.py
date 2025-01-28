@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -21,7 +22,9 @@ def calculate_combined_loss(original, reconstructed, perceptual_loss_fn, mse_fac
     combined_loss = mse_factor * mse_loss + (1-mse_factor) * perceptual_loss
     return combined_loss
 
-def evaluate_model_and_save_plot(model_path, dataset_path, labels_file, plot_save_path, thresholds=[1.7022], mse_factor=None):
+def evaluate_model_and_save_plot(model_path, dataset_path, labels_file, plot_save_path, thresholds=None, mse_factor=None):
+    if thresholds is None:
+        thresholds = [('example', 1.7022)]
     mean, std = MEAN, STD
 
     transform = transforms.Compose([
@@ -89,7 +92,23 @@ def evaluate_model_and_save_plot(model_path, dataset_path, labels_file, plot_sav
     plt.ylabel('Frequency')
     plt.title('Histogram of Two Lists')
     plt.legend()
-
-    plt.savefig(plot_save_path)
+    if plot_save_path:
+        plt.savefig(plot_save_path)
     plt.show()
 
+if __name__ == '__main__':
+    model_path = 'models/UNET_MSE_FACTOR_03.pth'
+    dataset_path = 'dataset/test/imgs'
+    labels_file = 'dataset/test/test_annotation.txt'
+    mse_factor = 0.3
+
+    threshold_range = [(f'Threshold {i}', i) for i in np.linspace(1, 2.0, 100)]
+
+    evaluate_model_and_save_plot(
+        model_path=model_path,
+        dataset_path=dataset_path,
+        labels_file=labels_file,
+        plot_save_path=None,
+        thresholds=threshold_range,
+        mse_factor=mse_factor
+    )

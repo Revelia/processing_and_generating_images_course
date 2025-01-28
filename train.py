@@ -28,27 +28,27 @@ def apply_artifacts(images):
     circle_radius = min(height, width) // 4
 
     for i in range(images_clone.size(0)):
-        if random.random() < 0.8:
-            # Randomly offset the center of the circle
+        if random.random() < 1:
+
             offset_x = random.randint(-circle_radius, circle_radius)
             offset_y = random.randint(-circle_radius, circle_radius)
             center_x = width // 2 + offset_x
             center_y = height // 2 + offset_y
 
-            # Create a mask with the same dimensions as the image
+
             mask = np.zeros((height, width), dtype=np.uint8)
-            # Draw a filled circle on the mask
+
             cv2.circle(mask, (center_x, center_y), circle_radius, 1, thickness=-1)
 
-            # Convert the image to a NumPy array
+
             image_np = images_clone[i].cpu().numpy().transpose(1, 2, 0)
-            # Ensure the array is contiguous
+
             image_np = np.ascontiguousarray(image_np)
 
-            # Apply changes only within the circle
-            image_np[mask == 1] = image_np[mask == 1] + 255
 
-            # Convert back to a tensor
+            image_np[mask == 1] = np.random.rand() * image_np[mask == 1] + 255 * np.random.rand()
+
+
             images_clone[i] = torch.from_numpy(image_np.transpose(2, 0, 1))
 
     return images_clone
@@ -103,11 +103,11 @@ def train_autoencoder(dataset_path, val_dataset_path, mean, std, model_path = "m
         epoch_perceptual_loss = 0
 
         for images, _ in tqdm(train_dataloader, desc=f'Training Autoencoder epoch {epoch + 1}/{num_epochs}...'):
-            # images_with_artifacts = apply_artifacts(images)
-
+            images_with_artifacts = apply_artifacts(images)
+            images_with_artifacts = images_with_artifacts.cuda()
             images = images.cuda()
 
-            reconstructed = autoencoder(images)
+            reconstructed = autoencoder(images_with_artifacts)
 
             total_loss, mse_loss, perceptual_loss = autoencoder_loss_function(
                 reconstructed, images, perceptual_loss_fn, mse_factor

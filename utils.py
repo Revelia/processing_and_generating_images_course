@@ -6,7 +6,7 @@ from torchvision import transforms
 from tqdm import tqdm
 from constant import IMG_SIZE, SEED
 from dataloader import ImageFolderDataset
-from torchvision.models import alexnet
+from torchvision.models import alexnet, vgg16
 import torch.nn.functional as F
 
 torch.manual_seed(SEED)
@@ -48,7 +48,7 @@ def denormalize(image, mean, std):
 class PerceptualLoss(nn.Module):
     def __init__(self):
         super(PerceptualLoss, self).__init__()
-        alex = alexnet(pretrained=True).features
+        alex = vgg16(pretrained=True).features
         self.layers = nn.Sequential(*list(alex)[:-1]).eval()
         for param in self.layers.parameters():
             param.requires_grad = False

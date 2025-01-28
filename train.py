@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import torch
 
@@ -5,18 +7,51 @@ from constant import MEAN, STD, SEED, BATCH_SIZE, LR
 from constant import IMG_SIZE, NUM_EPOCH
 import torch.nn.functional as F
 from torchvision import transforms
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader
 from dataloader import ImageFolderDataset
 from tqdm import tqdm
 from autoencoder import UNet
 from utils import PerceptualLoss
-from validate import visualize_results
 import wandb
+import matplotlib.pyplot as plt
+import cv2
 
 torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 np.random.seed(SEED)
 
+
+
+def apply_artifacts(images):
+    images_clone = images.clone()
+    _, _, height, width = images_clone.size()
+    circle_radius = min(height, width) // 4
+
+    for i in range(images_clone.size(0)):
+        if random.random() < 0.8:
+            # Randomly offset the center of the circle
+            offset_x = random.randint(-circle_radius, circle_radius)
+            offset_y = random.randint(-circle_radius, circle_radius)
+            center_x = width // 2 + offset_x
+            center_y = height // 2 + offset_y
+
+            # Create a mask with the same dimensions as the image
+            mask = np.zeros((height, width), dtype=np.uint8)
+            # Draw a filled circle on the mask
+            cv2.circle(mask, (center_x, center_y), circle_radius, 1, thickness=-1)
+
+            # Convert the image to a NumPy array
+            image_np = images_clone[i].cpu().numpy().transpose(1, 2, 0)
+            # Ensure the array is contiguous
+            image_np = np.ascontiguousarray(image_np)
+
+            # Apply changes only within the circle
+            image_np[mask == 1] = image_np[mask == 1] + 255
+
+            # Convert back to a tensor
+            images_clone[i] = torch.from_numpy(image_np.transpose(2, 0, 1))
+
+    return images_clone
 
 def autoencoder_loss_function(reconstructed, original, perceptual_loss_fn, mse_factor):
     mse_loss = F.mse_loss(reconstructed, original)
@@ -68,6 +103,8 @@ def train_autoencoder(dataset_path, val_dataset_path, mean, std, model_path = "m
         epoch_perceptual_loss = 0
 
         for images, _ in tqdm(train_dataloader, desc=f'Training Autoencoder epoch {epoch + 1}/{num_epochs}...'):
+            # images_with_artifacts = apply_artifacts(images)
+
             images = images.cuda()
 
             reconstructed = autoencoder(images)
@@ -134,11 +171,53 @@ def train_autoencoder(dataset_path, val_dataset_path, mean, std, model_path = "m
 
 if __name__ == "__main__":
     dataset_path = "dataset/train"
+    val_dataset_path = "dataset/val"
 
     mean, std = MEAN, STD
     print(f"Средние значения: {mean}")
     print(f"Стандартные отклонения: {std}")
 
-    autoencoder, model_path = train_autoencoder(dataset_path, mean, std)
 
-    visualize_results(model_path, dataset_path, mean, std)
+    # Visualize the effect of artifacts
+    transform = transforms.Compose([
+        transforms.Resize(IMG_SIZE),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std)
+    ])
+    dataset = ImageFolderDataset(dataset_path, transform=transform)
+    dataloader = DataLoader(dataset, batch_size=6, shuffle=False)
+
+    images, _ = next(iter(dataloader))
+    images_with_artifacts = apply_artifacts(images)
+
+    images = images.permute(0, 2, 3, 1).cpu().numpy()
+    images_with_artifacts = images_with_artifacts.permute(0, 2, 3, 1).cpu().numpy()
+
+    plt.figure(figsize=(12, 6))
+    for i in range(6):
+        plt.subplot(2, 6, i + 1)
+        plt.imshow(images[i])
+        plt.axis("off")
+        plt.subplot(2, 6, i + 7)
+        plt.imshow(images_with_artifacts[i])
+        plt.axis("off")
+    plt.show()
+
+    # dataset = ImageFolderDataset("dataset/proliv", transform=transform)
+    # dataloader = DataLoader(dataset, batch_size=6, shuffle=False)
+    #
+    # images, _ = next(iter(dataloader))
+    # images_with_artifacts = apply_artifacts(images)
+    #
+    # images = images.permute(0, 2, 3, 1).cpu().numpy()
+    # images_with_artifacts = images_with_artifacts.permute(0, 2, 3, 1).cpu().numpy()
+    #
+    # plt.figure(figsize=(12, 6))
+    # for i in range(6):
+    #     plt.subplot(2, 6, i + 1)
+    #     plt.imshow(images[i])
+    #     plt.axis("off")
+    #     plt.subplot(2, 6, i + 7)
+    #     plt.imshow(images_with_artifacts[i])
+    #     plt.axis("off")
+    # plt.show()

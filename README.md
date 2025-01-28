@@ -86,90 +86,32 @@ $$loss_{perceptual} = MSE[AlexNet(original), AlexNet(reconstruction)]$$
 
 Графики экспериментов и пример реконструкции будут лежать в соответствующих папках, логи обучения в wandb. Приведем тут только краткие результаты:
 
-```
-==========
-Имя эксперимента: UNET_MSE_FACTOR_00
 
-----------
-Info: Best F1:
-Threshold: 1.3541354135413541:
-True Positives: 126, False Positives: 618
-True Negatives: 3047, False Negatives: 3
-True Positive Rate (TPR): 0.9767
-True Negative Rate (TNR): 0.8314
-----------
-Info: TPR 95:
-Threshold: 1.5131513151315132:
-True Positives: 124, False Positives: 554
-True Negatives: 3111, False Negatives: 5
-True Positive Rate (TPR): 0.9612
-True Negative Rate (TNR): 0.8488
-----------
-Info: TNR 95:
-Threshold: 0.725072507250725:
-True Positives: 129, False Positives: 1653
-True Negatives: 2012, False Negatives: 0
-True Positive Rate (TPR): 1.0000
-True Negative Rate (TNR): 0.5490
+| Эксперимент           | Выбор порога | Порог      | TP  | FP  | TN   | FN  | TPR    | TNR    |
+|-----------------------|--------------|------------|-----|-----|------|-----|--------|--------|
+| **UNET_MSE_FACTOR_00** | Best F1      | 1.3541     | 126 | 618 | 3047 | 3   | 0.9767 | 0.8314 |
+|                       | TPR 95       | 1.5132     | 124 | 554 | 3111 | 5   | 0.9612 | 0.8488 |
+|                       | TNR 95       | 0.7251     | 129 | 1653| 2012 | 0   | 1.0000 | 0.5490 |
+|                       | TNR TPR AVG  | 1.1191     | 129 | 837 | 2828 | 0   | 1.0000 | 0.7716 |
+| **UNET_MSE_FACTOR_03** | Best F1      | 1.5502     | 128 | 647 | 3018 | 1   | 0.9922 | 0.8235 |
+|                       | TPR 95       | 1.6062     | 128 | 615 | 3050 | 1   | 0.9922 | 0.8322 |
+|                       | TNR 95       | 1.0891     | 129 | 1257| 2408 | 0   | 1.0000 | 0.6570 |
+|                       | TNR TPR AVG  | 1.3476     | 129 | 812 | 2853 | 0   | 1.0000 | 0.7784 |
+| **UNET_MSE_FACTOR_06** | Best F1      | 1.7432     | 128 | 647 | 3018 | 1   | 0.9922 | 0.8235 |
+|                       | TPR 95       | 1.8962     | 122 | 594 | 3071 | 7   | 0.9457 | 0.8379 |
+|                       | TNR 95       | 1.3671     | 129 | 1025| 2640 | 0   | 1.0000 | 0.7203 |
+|                       | TNR TPR AVG  | 1.6317     | 129 | 700 | 2965 | 0   | 1.0000 | 0.8090 |
+| **UNET_MSE_FACTOR_08** | Best F1      | 1.6372     | 126 | 729 | 2936 | 3   | 0.9767 | 0.8011 |
+|                       | TPR 95       | 1.7282     | 121 | 674 | 2991 | 8   | 0.9380 | 0.8161 |
+|                       | TNR 95       | 1.4851     | 129 | 942 | 2723 | 0   | 1.0000 | 0.7430 |
+|                       | TNR TPR AVG  | 1.6067     | 126 | 750 | 2915 | 3   | 0.9767 | 0.7954 |
+| **UNET_MSE_FACTOR_10** | Best F1      | 1.5012     | 129 | 630 | 3035 | 0   | 1.0000 | 0.8281 |
+|                       | TPR 95       | 1.7832     | 122 | 503 | 3162 | 7   | 0.9457 | 0.8628 |
+|                       | TNR 95       | 0.8841     | 129 | 1510| 2155 | 0   | 1.0000 | 0.5880 |
+|                       | TNR TPR AVG  | 1.3336     | 129 | 762 | 2903 | 0   | 1.0000 | 0.7921 |
 
-==========
-Имя эксперимента: UNET_MSE_FACTOR_03
-----------
-Info: Best F1:
-Threshold: 1.5501550155015502:
-True Positives: 128, False Positives: 647
-True Negatives: 3018, False Negatives: 1
-True Positive Rate (TPR): 0.9922
-True Negative Rate (TNR): 0.8235
-----------
-Info: TPR 95:
-Threshold: 1.6061606160616062:
-True Positives: 128, False Positives: 615
-True Negatives: 3050, False Negatives: 1
-True Positive Rate (TPR): 0.9922
-True Negative Rate (TNR): 0.8322
-----------
-Info: TNR 95:
-Threshold: 1.0891089108910892:
-True Positives: 129, False Positives: 1257
-True Negatives: 2408, False Negatives: 0
-True Positive Rate (TPR): 1.0000
-True Negative Rate (TNR): 0.6570
-==========
-Имя эксперимента: UNET_MSE_FACTOR_06
-----------
-Info: Best F1:
-Threshold: 1.7431743174317431:
-True Positives: 128, False Positives: 647
-True Negatives: 3018, False Negatives: 1
-True Positive Rate (TPR): 0.9922
-True Negative Rate (TNR): 0.8235
-----------
-----------
-Info: TPR 95:
-Threshold: 1.8961896189618963:
-True Positives: 122, False Positives: 594
-True Negatives: 3071, False Negatives: 7
-True Positive Rate (TPR): 0.9457
-True Negative Rate (TNR): 0.8379
-----------
-----------
-Info: TNR 95:
-Threshold: 1.3671367136713672:
-True Positives: 129, False Positives: 1025
-True Negatives: 2640, False Negatives: 0
-True Positive Rate (TPR): 1.0000
-True Negative Rate (TNR): 0.7203
-----------
-==========
-Имя эксперимента: UNET_MSE_FACTOR_08
 
-==========
-Имя эксперимента: UNET_MSE_FACTOR_10
-
-==========
-
-```
+Попробуем вместо AlexNet использовать VGG16:
 
 
 

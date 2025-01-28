@@ -106,6 +106,10 @@ $$loss_{perceptual} = MSE[AlexNet(original), AlexNet(reconstruction)]$$
 
 Видно, что фичи AlexNet улучшают метрики
 
+График для порога TPR 95 (используем его, так как у нас основная проблема с TNR)
+
+![img_4.png](img_4.png)
+
 ### VGG16 вместо AlexNet
 Попробуем вместо AlexNet использовать VGG16:
 

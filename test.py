@@ -8,20 +8,20 @@ from dataloader import LabeledImageDataset
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from utils import PerceptualLoss
-from constant import IMG_SIZE, MSE_FACTOR
+from constant import IMG_SIZE
 
 
-def calculate_combined_loss(original, reconstructed, perceptual_loss_fn, mean, std):
+def calculate_combined_loss(original, reconstructed, perceptual_loss_fn, mse_factor):
 
     mse_loss = F.mse_loss(reconstructed, original).item()
 
 
     perceptual_loss = perceptual_loss_fn(original, reconstructed).item()
 
-    combined_loss = MSE_FACTOR * mse_loss + (1-MSE_FACTOR) * perceptual_loss
+    combined_loss = mse_factor * mse_loss + (1-mse_factor) * perceptual_loss
     return combined_loss
 
-if __name__ == "__main__":
+def evaluate_model_and_save_plot(model_path, dataset_path, labels_file, plot_save_path, thresholds=[1.7022], mse_factor=None):
     mean, std = MEAN, STD
 
     transform = transforms.Compose([
@@ -29,18 +29,13 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
-
-    test_set = LabeledImageDataset(root_dir='dataset/test/imgs',
-                                   labels_file='dataset/test/test_annotation.txt',
-                                   transform=transform)
-    tsh = 1.8658
-
+    test_set = LabeledImageDataset(root_dir=dataset_path, labels_file=labels_file, transform=transform)
     dataloader = DataLoader(test_set, batch_size=1, shuffle=False)
 
-    predicted = []
+
     test_labels = []
 
-    model = torch.load('models/autoencoder_attentive.pth')
+    model = torch.load(model_path)
     model.cuda()
     model.eval()
 
@@ -55,37 +50,46 @@ if __name__ == "__main__":
         with torch.no_grad():
             reconstructed = model(image.to('cuda'))
 
-            loss = calculate_combined_loss(image.to('cuda'), reconstructed, perceptual_loss_fn, mean, std)
+            loss = calculate_combined_loss(image.to('cuda'), reconstructed, perceptual_loss_fn, mse_factor)
             if labels.item() == 0:
                 loses_0.append(loss)
             elif labels.item() == 1:
                 loses_1.append(loss)
             loses.append(loss)
 
-            if loss >= tsh:
+    for info, threshold in thresholds:
+        predicted = []
+        for loss in loses:
+            if loss >= threshold:
                 predicted.append(1)
             else:
                 predicted.append(0)
 
-    tps = sum(predicted[i] == 1 and test_labels[i] == 1 for i in range(len(predicted)))
-    fps = sum(predicted[i] == 1 and test_labels[i] == 0 for i in range(len(predicted)))
-    tns = sum(predicted[i] == 0 and test_labels[i] == 0 for i in range(len(predicted)))
-    fns = sum(predicted[i] == 0 and test_labels[i] == 1 for i in range(len(predicted)))
+        tps = sum(predicted[i] == 1 and test_labels[i] == 1 for i in range(len(predicted)))
+        fps = sum(predicted[i] == 1 and test_labels[i] == 0 for i in range(len(predicted)))
+        tns = sum(predicted[i] == 0 and test_labels[i] == 0 for i in range(len(predicted)))
+        fns = sum(predicted[i] == 0 and test_labels[i] == 1 for i in range(len(predicted)))
 
-    tpr = tps / (tps + fns) if (tps + fns) > 0 else 0
-    tnr = tns / (tns + fps) if (tns + fps) > 0 else 0
+        tpr = tps / (tps + fns) if (tps + fns) > 0 else 0
+        tnr = tns / (tns + fps) if (tns + fps) > 0 else 0
 
-    print(f'True Positives: {tps}, False Positives: {fps}')
-    print(f'True Negatives: {tns}, False Negatives: {fns}')
-    print(f'True Positive Rate (TPR): {tpr:.4f}')
-    print(f'True Negative Rate (TNR): {tnr:.4f}')
+        print('-'* 10)
+        print(f'Info: {info}')
+        print(f'Threshold: {threshold}:')
+        print(f'True Positives: {tps}, False Positives: {fps}')
+        print(f'True Negatives: {tns}, False Negatives: {fns}')
+        print(f'True Positive Rate (TPR): {tpr:.4f}')
+        print(f'True Negative Rate (TNR): {tnr:.4f}')
+        print('-' * 10)
 
     plt.hist(loses_0, bins=100, alpha=0.5, label='List 1', edgecolor='black')
-    plt.hist(loses_1, bins=100, alpha=0.5, label='List 2', edgecolor='black')
+    plt.hist(loses_1 * 100, bins=100, alpha=0.5, label='List 2', edgecolor='black')
 
     plt.xlabel('Value')
     plt.ylabel('Frequency')
     plt.title('Histogram of Two Lists')
     plt.legend()
 
+    plt.savefig(plot_save_path)
     plt.show()
+

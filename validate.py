@@ -1,9 +1,11 @@
+import os
+
 import torch
 from tqdm import tqdm
 from torchvision import transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from constant import IMG_SIZE, MSE_FACTOR, MEAN, STD
+from constant import IMG_SIZE, MEAN, STD
 from dataloader import ImageFolderDataset
 from utils import calculate_mean_std, PerceptualLoss, denormalize
 import torch.nn.functional as F
@@ -50,7 +52,8 @@ def calculate_loss_distribution(model_path,
                                 mean,
                                 std,
                                 image_size=IMG_SIZE,
-                                save_path="loss_distribution.png"):
+                                save_path="loss_distribution.png",
+                                mse_factor= None):
     transform = transforms.Compose([
         transforms.Resize(image_size),
         transforms.ToTensor(),
@@ -75,7 +78,7 @@ def calculate_loss_distribution(model_path,
 
             perceptual_loss = perceptual_loss_fn(images, reconstructed).item()
 
-            combined_loss = MSE_FACTOR * mse_loss + (1-MSE_FACTOR) * perceptual_loss
+            combined_loss = mse_factor * mse_loss + (1-mse_factor) * perceptual_loss
             combined_losses.append(combined_loss)
 
     plt.figure(figsize=(10, 6))
@@ -89,22 +92,35 @@ def calculate_loss_distribution(model_path,
     plt.show()
     print(f"График распределения комбинированного лосса сохранён в {save_path}")
 
+def validate(model_path='models/Unet.pth', experiment_name=None, mse_factor=0.5):
 
-if __name__ == "__main__":
-    dataset_path = 'dataset/train'
-    mean, std = MEAN, STD
-    model_path = 'models/Unet.pth'
+
+    dataset_path = 'dataset/val'
     dataset_proliv = 'dataset/proliv'
 
-    visualize_results(model_path, dataset_path, mean, std, save_path="results_train.png")
-    visualize_results(model_path, dataset_proliv, mean, std, save_path="results_proliv.png")
+    mean, std = MEAN, STD
+    model_path = model_path
+
+    base_save_path = experiment_name if experiment_name else ""
+
+    if experiment_name and not os.path.exists(base_save_path):
+        os.makedirs(base_save_path)
+
+    results_train_path = os.path.join(base_save_path, "results_train.png")
+    results_proliv_path = os.path.join(base_save_path, "results_proliv.png")
+    loss_distribution_train_path = os.path.join(base_save_path, "loss_distribution_train.png")
+    loss_distribution_proliv_path = os.path.join(base_save_path, "loss_distribution_proliv.png")
+
+    visualize_results(model_path, dataset_path, mean, std, save_path=results_train_path)
+    visualize_results(model_path, dataset_proliv, mean, std, save_path=results_proliv_path)
 
     calculate_loss_distribution(
         model_path=model_path,
         dataset_path=dataset_path,
         mean=mean,
         std=std,
-        save_path="loss_distribution_train.png"
+        save_path=loss_distribution_train_path,
+        mse_factor=mse_factor,
     )
 
     calculate_loss_distribution(
@@ -112,5 +128,9 @@ if __name__ == "__main__":
         dataset_path=dataset_proliv,
         mean=mean,
         std=std,
-        save_path="loss_distribution_proliv.png"
+        save_path=loss_distribution_proliv_path,
+        mse_factor=mse_factor,
     )
+
+if __name__ == "__main__":
+    validate()

@@ -28,7 +28,7 @@ def apply_artifacts(images):
     circle_radius = min(height, width) // 4
 
     for i in range(images_clone.size(0)):
-        if random.random() < 1:
+        if random.random() < 0.3:
 
             offset_x = random.randint(-circle_radius, circle_radius)
             offset_y = random.randint(-circle_radius, circle_radius)
